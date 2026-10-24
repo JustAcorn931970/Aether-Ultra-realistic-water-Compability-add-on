@@ -2,17 +2,16 @@
   "schemaVersion": 1,
   "id": "aetherium_urw_bridge",
   "version": "${version}",
-  "name": "Aetherium + Ultra Realistic Water Shader Bridge",
-  "description": "Adds a standard fluid proxy for Ultra Realistic Water so Aetherium's converted shader packs can see its fluids in their fluid pass.",
+  "name": "Aetherium + Ultra Realistic Water Safe Bridge",
+  "description": "Safe recovery build: avoids replacing Ultra Realistic Water's custom fluid renderer with vanilla proxy geometry.",
   "authors": ["Acorn"],
   "license": "MIT",
   "environment": "client",
-  "mixins": [
-    {
-      "config": "aetherium-urw-bridge.client.mixins.json",
-      "environment": "client"
-    }
-  ],
+  "entrypoints": {
+    "client": [
+      "dev.acorn.aetheriumurw.BridgeSafetyClient"
+    ]
+  },
   "depends": {
     "fabricloader": ">=0.19.5",
     "minecraft": "~26.3",

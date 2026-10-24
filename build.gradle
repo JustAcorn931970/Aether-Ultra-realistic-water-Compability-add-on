@@ -1,3 +1,4 @@
+
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
 }
@@ -10,7 +11,9 @@ base {
 }
 
 repositories {
-    maven { url = 'https://maven.fabricmc.net/' }
+    maven {
+        url = 'https://maven.fabricmc.net/'
+    }
     mavenCentral()
 }
 
@@ -37,6 +40,7 @@ dependencies {
 
 tasks.processResources {
     inputs.property 'version', project.version
+
     filesMatching('fabric.mod.json') {
         expand version: project.version
     }
@@ -51,5 +55,6 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+
     withSourcesJar()
 }

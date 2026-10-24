@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "dev.acorn.aetheriumurw.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "refmap": "aetherium-urw-bridge-refmap.json",
+  "client": [
+    "RealisticWaterClientMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

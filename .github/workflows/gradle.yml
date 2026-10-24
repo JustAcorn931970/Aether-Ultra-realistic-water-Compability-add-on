@@ -1,0 +1,87 @@
+
+name: Build Aetherium URW Shader Bridge
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build for Minecraft 26.3 + Fabric
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle 9.8.2
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.8.2'
+          cache-provider: basic
+
+      - name: Build mod
+        run: gradle --no-daemon --stacktrace clean build
+
+      - name: Verify built JAR and metadata
+        id: verify
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          MOD_VERSION="$(sed -n 's/^mod_version=//p' gradle.properties | tail -n 1 | tr -d '\r' | xargs)"
+          ARCHIVES_BASE_NAME="$(sed -n 's/^archives_base_name=//p' gradle.properties | tail -n 1 | tr -d '\r' | xargs)"
+
+          if [[ -z "$MOD_VERSION" || -z "$ARCHIVES_BASE_NAME" ]]; then
+            echo "Missing mod version or archive name in gradle.properties"
+            exit 1
+          fi
+
+          JAR="build/libs/${ARCHIVES_BASE_NAME}-${MOD_VERSION}.jar"
+          echo "Checking $JAR"
+          ls -la build/libs
+          test -f "$JAR"
+
+          CONTENTS="$RUNNER_TEMP/jar-contents.txt"
+          jar tf "$JAR" > "$CONTENTS"
+
+          grep -Fxq 'fabric.mod.json' "$CONTENTS"
+          grep -Fxq 'aetherium-urw-bridge.client.mixins.json' "$CONTENTS"
+
+          JAR_PATH="$JAR" EXPECTED_VERSION="$MOD_VERSION" python3 - <<'PY'
+          import json
+          import os
+          import zipfile
+
+          with zipfile.ZipFile(os.environ["JAR_PATH"]) as jar:
+              metadata = json.loads(
+                  jar.read("fabric.mod.json").decode("utf-8")
+              )
+
+          assert metadata.get("id") == "aetherium_urw_bridge", metadata
+          assert metadata.get("version") == os.environ["EXPECTED_VERSION"], metadata
+
+          print("Mod metadata verified:", metadata["id"], metadata["version"])
+          PY
+
+          echo "jar_path=$JAR" >> "$GITHUB_OUTPUT"
+
+      - name: Upload built JAR
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.verify.outputs.jar_path }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
